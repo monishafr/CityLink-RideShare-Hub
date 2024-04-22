@@ -296,14 +296,10 @@ def show_rider_dashboard():
     #         st.success("Ride closed successfully.")
      # Display existing rides and options for each ride
     rides = fetch_rides(st.session_state['user_id'])
-    if not rides:
-        st.write("NO RIDES YET. ADD ONE!!")
-    for ride in rides:
-        # display_ride_block(ride)
-        ride_info = f"Ride ID: {ride['Ride ID']} - From {ride['Departure City']} -----------------------------> {ride['Arrival City']} on {ride['Departure Date']}"
     if rides:
         for ride in rides:
-            with st.expander(f"Ride ID: {ride['Ride ID']}"):
+            ride_info = f"Ride ID: {ride['Ride ID']} - From {ride['Departure City']} to {ride['Arrival City']} on {ride['Departure Date']}"
+            with st.expander(ride_info):
                 st.write(f"Departure Time: {ride['Departure Time']}")
                 st.write(f"Arrival Time: {ride['Arrival Time']}")
                 st.write(f"Vehicle Type: {ride['Vehicle Type']}")
@@ -314,7 +310,9 @@ def show_rider_dashboard():
                     st.success("Ride closed successfully.")
                 if st.button(f"Update Ride {ride['Ride ID']}", key=f"update{ride['Ride ID']}"):
                     toggle_update_ride_form(ride['Ride ID'])
-
+    else:
+        st.write("No rides yet. Add one!")
+    
     if st.session_state.show_update_form:
         update_ride_form()
 
@@ -392,34 +390,34 @@ def show_passenger_dashboard():
             "departure_date": departure_date.strftime("%Y-%m-%d"),
             "available_seats": available_seats
         }
-        rides = fetch_available_rides(filters)
-        if not rides:
-            st.write("No rides available!!!")
-        for ride in rides:
-            ride_info = f"Ride ID: {ride['Ride ID']} - From {ride['Departure City']} -----------------------------> {ride['Arrival City']} on {ride['Departure Date']}"
-            with st.expander(ride_info):
-                st.write(f"Departure Time: {ride['Departure Time']}")
-                st.write(f"Arrival Time: {ride['Arrival Time']}")
-                st.write(f"Vehicle Type: {ride['Vehicle Type']}")
-                st.write(f"Available Seats: {ride['Available Seats']}")
-                st.write(f"Price: ${ride['Price']}")
+    rides = fetch_available_rides(filters)
+    if not rides:
+        st.write("No rides available!!!")
+    for ride in rides:
+        ride_info = f"Ride ID: {ride['Ride ID']} - From {ride['Departure City']} -----------------------------> {ride['Arrival City']} on {ride['Departure Date']}"
+        with st.expander(ride_info):
+            st.write(f"Departure Time: {ride['Departure Time']}")
+            st.write(f"Arrival Time: {ride['Arrival Time']}")
+            st.write(f"Vehicle Type: {ride['Vehicle Type']}")
+            st.write(f"Available Seats: {ride['Available Seats']}")
+            st.write(f"Price: ${ride['Price']}")
 
-                if st.button(f"Book Ride {ride['Ride ID']}", key=f"book{ride['Ride ID']}"):
-                    with st.form(f"book_ride_{ride['Ride ID']}", clear_on_submit=False):
-                        to_reserve_seats = st.number_input("Number of seats to reserve", min_value=1)
-                        booking_details = {
-                            "ride_id": ride['Ride ID'],
-                            "passenger_id": st.session_state['user_id'],
-                            "number_of_seats_reserved": to_reserve_seats,
-                            "price": ride['Price']
-                        }
-                        seat_reserve_submit_button = st.form_submit_button("Complete Reservation")
-                        if seat_reserve_submit_button:
-                            book_response = book_ride(booking_details)
-                            if book_response.get("status") == "Success":
-                                st.success("Ride booked successfully.")
-                            else:
-                                st.error("Booking failed.")
+            if st.button(f"Book Ride {ride['Ride ID']}", key=f"book{ride['Ride ID']}"):
+                with st.form(f"book_ride_{ride['Ride ID']}", clear_on_submit=False):
+                    to_reserve_seats = st.number_input("Number of seats to reserve", min_value=1)
+                    booking_details = {
+                        "ride_id": ride['Ride ID'],
+                        "passenger_id": st.session_state['user_id'],
+                        "number_of_seats_reserved": to_reserve_seats,
+                        "price": ride['Price']
+                    }
+                    seat_reserve_submit_button = st.form_submit_button("Complete Reservation")
+                    if seat_reserve_submit_button:
+                        book_response = book_ride(booking_details)
+                        if book_response.get("status") == "Success":
+                            st.success("Ride booked successfully.")
+                        else:
+                            st.error("Booking failed.")
     
     if st.button("View My Bookings"):
         bookings = fetch_bookings(st.session_state['user_id'])
