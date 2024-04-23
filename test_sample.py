@@ -443,8 +443,8 @@ def show_login_page():
     st.title('CityLink Rideshare Hub')
     col1, col2 = st.columns([1, 1])
     with col1:
-        st.text("Hello")
-        # st_lottie(lottie_animation, height=300, key="animation",)  # Set the height as needed
+        # st.text("Hello")
+        st_lottie(lottie_animation, height=300, key="animation",)  # Set the height as needed
     with col2:
         user_id = st.text_input("User ID")
         user_password = st.text_input("Password", type="password")
