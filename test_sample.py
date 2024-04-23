@@ -107,16 +107,14 @@ def get_currencies():
         return []
 
 # APIs for riders page
-def fetch_rides(user_id):
-    response = requests.post(f"{API_URL}/fetch_rides", json={"user_id": user_id})
+def fetch_bookings(user_id):
+    response = requests.post(f"{API_URL}/reservations", json={"user_id": user_id})
     if response.ok:
-        try:
-            return response.json()
-        except ValueError:
-            st.error("Failed to parse JSON response.")
-            return []
+        bookings = response.json()
+        print("Fetched bookings:", bookings)  # Debugging line to see what is returned
+        return bookings
     else:
-        st.error("Failed to fetch rides. Server responded with an error.")
+        st.error("Failed to fetch bookings. Server responded with an error.")
         return []
 
 def add_ride(ride_details):
@@ -371,9 +369,8 @@ def update_ride_form():
 
 def show_passenger_dashboard():
     cities = get_cities()
-    st.title(f"Passenger Dashboard")
-    # Create the layout for ride information
-    col1, col2, col3, col4, = st.columns([1, 1, 1, 1])
+    st.title("Passenger Dashboard")
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     with col1:
         departure_city = st.selectbox("Departure City", cities)
     with col2:
@@ -390,49 +387,55 @@ def show_passenger_dashboard():
             "departure_date": departure_date.strftime("%Y-%m-%d"),
             "available_seats": available_seats
         }
-    rides = fetch_available_rides(filters)
-    if not rides:
-        st.write("No rides available!!!")
-    for ride in rides:
-        ride_info = f"Ride ID: {ride['Ride ID']} - From {ride['Departure City']} -----------------------------> {ride['Arrival City']} on {ride['Departure Date']}"
-        with st.expander(ride_info):
-            st.write(f"Departure Time: {ride['Departure Time']}")
-            st.write(f"Arrival Time: {ride['Arrival Time']}")
-            st.write(f"Vehicle Type: {ride['Vehicle Type']}")
-            st.write(f"Available Seats: {ride['Available Seats']}")
-            st.write(f"Price: ${ride['Price']}")
+        rides = fetch_available_rides(filters)
+        if not rides:
+            st.write("No rides available.")
+        else:
+            for ride in rides:
+                ride_info = f"Ride ID: {ride['Ride ID']} - From {ride['Departure City']} to {ride['Arrival City']} on {ride['Departure Date']}"
+                with st.expander(ride_info):
+                    st.write(f"Departure Time: {ride['Departure Time']}")
+                    st.write(f"Arrival Time: {ride['Arrival Time']}")
+                    st.write(f"Vehicle Type: {ride['Vehicle Type']}")
+                    st.write(f"Available Seats: {ride['Available Seats']}")
+                    st.write(f"Price: ${ride['Price']}")
+                    if st.button("Book Ride", key=f"book{ride['Ride ID']}"):
+                        st.session_state['booking_ride_id'] = ride['Ride ID']
+                        st.session_state['booking_ride_details'] = ride
 
-            if st.button(f"Book Ride {ride['Ride ID']}", key=f"book{ride['Ride ID']}"):
-                with st.form(f"book_ride_{ride['Ride ID']}", clear_on_submit=False):
-                    to_reserve_seats = st.number_input("Number of seats to reserve", min_value=1)
-                    booking_details = {
-                        "ride_id": ride['Ride ID'],
-                        "passenger_id": st.session_state['user_id'],
-                        "number_of_seats_reserved": to_reserve_seats,
-                        "price": ride['Price']
-                    }
-                    seat_reserve_submit_button = st.form_submit_button("Complete Reservation")
-                    if seat_reserve_submit_button:
-                        book_response = book_ride(booking_details)
-                        if book_response.get("status") == "Success":
-                            st.success("Ride booked successfully.")
-                        else:
-                            st.error("Booking failed.")
-    
+    if 'booking_ride_id' in st.session_state:
+        st.write("### Book Your Ride")
+        with st.form(f"book_ride_form_{st.session_state['booking_ride_id']}"):
+            st.write(f"Booking Ride ID: {st.session_state['booking_ride_id']}")
+            to_reserve_seats = st.number_input("Number of seats to reserve", min_value=1, max_value=st.session_state['booking_ride_details']['Available Seats'])
+            if st.form_submit_button("Complete Reservation"):
+                booking_details = {
+                    "ride_id": st.session_state['booking_ride_id'],
+                    "passenger_id": st.session_state['user_id'],
+                    "number_of_seats_reserved": to_reserve_seats,
+                    "price": st.session_state['booking_ride_details']['Price']
+                }
+                book_response = book_ride(booking_details)
+                if book_response.get("status") == "Success":
+                    st.success("Ride booked successfully.")
+                else:
+                    st.error(f"Booking failed: {book_response.get('message', 'Unknown error')}")
+                del st.session_state['booking_ride_id']  # Clean up session state after booking
+
     if st.button("View My Bookings"):
         bookings = fetch_bookings(st.session_state['user_id'])
         if not bookings:
-            st.write("No Bookings Yet!!!")
-        for booking in bookings:
-            booking_info = f"Booking ID {booking['Booking ID']}: Ride ID {booking['Ride ID']} - {booking['number_of_seats_reserved']} seats on {booking['Booking Date']}"
-            with st.expander(booking_info):
-                st.write(f"Departure Date: {booking['Departure Time']}, Time:{booking['Departure Time']}")
-                st.write(f"Pickup Location: {booking['Pickup Location']}")
-                st.write(f"Dropoff Location: {booking['Dropoff Location']}")
-                st.write(f"Billed Amount: {booking['Billed Amount']}")
-                st.write(f"Payment Status: ${booking['Payment Status']}")
-        
-            # st.text(f"Booking ID {booking['Booking ID']}: Ride ID {booking['Ride ID']} - {booking['number_of_seats_reserved']} seats on {booking['Booking Date']}")
+            st.write("No Bookings Yet.")
+        else:
+            for booking in bookings:
+                booking_info = f"Booking ID {booking['Booking ID']} - {booking['Seats Reserved']} seats on {booking['Booking Date']}"
+                with st.expander(booking_info):
+                    st.write(f"Departure Date: {booking['Departure Date']}, Time: {booking['Departure Time']}")
+                    st.write(f"Pickup Location: {booking['Pickup Location']}")
+                    st.write(f"Dropoff Location: {booking['Dropoff Location']}")
+                    st.write(f"Billed Amount: {booking['Billed Amount']}")
+                    st.write(f"Payment Status: {booking['Payment Status']}")
+
 
 
 # User management pages
