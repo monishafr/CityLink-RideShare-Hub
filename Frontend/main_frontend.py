@@ -5,6 +5,37 @@ import json
 from streamlit_lottie import st_lottie
 from streamlit_extras.switch_page_button import switch_page
 from PIL import Image
+import time
+
+# Set the background color of the sidebar
+st.markdown(
+    """
+    <style>
+        section[data-testid="stSidebar"] {
+            background-color: #AEB6BF;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Set the title color in the sidebar
+st.sidebar.markdown(
+    '<h1 style="color:#C0392B;">Navigation</h1>',
+    unsafe_allow_html=True
+)
+
+# Change the background color of buttons
+st.markdown(
+    """
+    <style>
+    button, .stButton>button { background-color: #2AC6C8; color: #FDFEFE; }
+    button:hover, .stButton>button:hover { background-color: #AEB6BF; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 
 # def set_title_color(color):
 #     st.markdown(
@@ -37,6 +68,8 @@ def load_lottiefile(filepath: str):
        return json.load(file)
 
 lottie_animation = load_lottiefile("Animation - 1713738452764.json")
+lottie_animation_info_page = load_lottiefile("Animation_info_page_2.json")
+
 
 # def display_ride_block(ride):
 #     # Calculate duration
@@ -240,7 +273,16 @@ def toggle_book_ride_form():
     st.session_state.show_book_ride_form = not st.session_state.show_book_ride_form
 
 def show_rider_dashboard():
-    st.title(f"Rider Dashboard")
+    # st.title(f"Rider Dashboard")
+    st.markdown(
+        """
+        <style>
+        .main-title { color: #FFC300; }
+        </style>
+        <h1 class='main-title'>Rider Dashboard</h1>
+        """,
+        unsafe_allow_html=True
+    )
 
     # Button to toggle adding a ride
     if st.button("Add New Ride"):
@@ -288,6 +330,7 @@ def show_rider_dashboard():
                 response = add_ride(ride_details)
                 if response.get("status") == "Success":
                     st.success("Ride added successfully!")
+                    time.sleep(3)
                     toggle_add_ride_form()  # Hide form after submission
                     st.rerun()
                 else:
@@ -371,7 +414,9 @@ def update_ride_form():
             
             if update_response and update_response.get("status") == "Success":
                 st.success("Ride updated successfully!")
+                time.sleep(3)
                 st.session_state.show_update_form = False  # Close the form after successful update
+                st.rerun()
             else:
                 error_message = update_response.get("message", "Unknown error occurred") if update_response else "Failed to get a valid response from server"
                 st.error(f"Failed to update ride: {error_message}")
@@ -390,7 +435,17 @@ def reset_filters():
     
 def show_passenger_dashboard():
     cities = get_cities()
-    st.title("Passenger Dashboard")
+    # st.title("Passenger Dashboard")
+    st.markdown(
+        """
+        <style>
+        .main-title { color: #FFC300; }
+        </style>
+        <h1 class='main-title'>Passenger Dashboard</h1>
+        """,
+        unsafe_allow_html=True
+    )
+
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     with col1:
         departure_city = st.selectbox("Departure City", cities)
@@ -440,6 +495,7 @@ def show_passenger_dashboard():
                             book_response = book_ride(booking_details)
                             if book_response.get("status") == "Success":
                                 st.success("Ride booked successfully.")
+                                time.sleep(3)
                                 toggle_search_rides_form()
                                 reset_filters()
                                 st.rerun()
@@ -526,7 +582,7 @@ def show_passenger_dashboard():
 
 # User management pages
 def show_login_page():
-    st.title('CityLink Rideshare Hub')
+    # st.title('CityLink Rideshare Hub')
     col1, col2 = st.columns([1, 1])
     with col1:
         # st.text("Hello")
@@ -546,7 +602,7 @@ def show_login_page():
                 st.error(response.get("message"))
 
 def show_registration_page():
-    st.title("CityLink Rideshare Hub")
+    # st.title("CityLink Rideshare Hub")
     col1, col2 = st.columns([1, 1])
     with col1:
         st_lottie(lottie_animation, height=300, key="animation",)  # Set the height as needed
@@ -565,7 +621,7 @@ def show_registration_page():
                 st.error(response.get("message"))
 
 def show_forgot_password_page():
-    st.title("CityLink Rideshare Hub")
+    # st.title("CityLink Rideshare Hub")
     col1, col2 = st.columns([1, 1])
     with col1:
         st_lottie(lottie_animation, height=300, key="animation",)  # Set the height as needed
@@ -581,14 +637,26 @@ def show_forgot_password_page():
 
 # Main application flow
 if st.session_state['logged_in']:
+    
     st.sidebar.success(f"Logged in as {st.session_state['user_id']}")
     select_role()
     show_dashboard()
     if st.sidebar.button("Logout"):
         logout()
+    st_lottie(lottie_animation_info_page, height=300, key="animation",)
 else:
+    # Change the main title color
+    st.markdown(
+        """
+        <style>
+        .main-title { color: #FFC300; }
+        </style>
+        <h1 class='main-title'>CityLink Rideshare Hub</h1>
+        """,
+        unsafe_allow_html=True
+    )
     # Sidebar for navigation
-    st.sidebar.title("Navigation")
+    # st.sidebar.title("Navigation")
     page = st.sidebar.selectbox("Choose a section", ["Login", "Sign Up", "Forgot Password"])
     # page = st.sidebar.radio("Navigation", ["Login", "Sign Up", "Forgot Password"])
     if page == "Login":
