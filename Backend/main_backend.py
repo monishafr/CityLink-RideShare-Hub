@@ -11,11 +11,18 @@ app = FastAPI()
 def postgres_connection():
     try:
         # Connecting to database
-        conn = psycopg2.connect(database = "adt_ride_share_database", 
-                user = "postgres", 
-                host= '127.0.0.1',
-                password = "mz7zdz123",
+        # conn = psycopg2.connect(database = "adt_ride_share_database", 
+        #         user = "postgres", 
+        #         host= '127.0.0.1',
+        #         password = "mz7zdz123",
+        #         port = 5432)
+        # Connecting to PostgreSQL hosted online
+        conn = psycopg2.connect(database = "rideshare_hub", 
+                user = "rideshare_hub_user", 
+                host= 'dpg-com6i56n7f5s73d5ld4g-a.oregon-postgres.render.com',
+                password = "nqvU0nhgNmQfiQfgP6LupSEoeIkgP5eE",
                 port = 5432)
+
         print("PostgreSQL connection established")
     except OperationalError:
         raise Exception("Error connecting to PostgreSQL database")
